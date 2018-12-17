@@ -31,6 +31,7 @@ extension GoogleCloudStorage {
         services.register(GoogleCloudStorage.self)
     }
 }
+
 final class GoogleCloudStorageTests: XCTestCase {
     let app: Application = {
         var services = Services.default()

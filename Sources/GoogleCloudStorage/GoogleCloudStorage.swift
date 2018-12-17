@@ -49,8 +49,7 @@ public struct GoogleCloudStorage: Storage, ServiceType {
                 mediaType: file.contentType ?? .plainText,
                 queryParameters: nil
             ).map { response in
-                print(response.selfLink ?? "nil")
-                return ""
+                return response.name ?? name
             }
         } catch let error {
             return self.worker.future(error: error)
