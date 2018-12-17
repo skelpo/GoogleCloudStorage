@@ -62,8 +62,11 @@ public struct GoogleCloudStorage: Storage, ServiceType {
             guard let name = file.split(separator: "/").last.map(String.init) else {
                 throw StorageError(identifier: "fileName", reason: "Unable to extract file name from path `\(file)`")
             }
+            guard let path = file.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else {
+                throw StorageError(identifier: "pathEncoding", reason: "File percent encoding failed")
+            }
             
-            return try self.client.object.getMedia(bucket: self.bucket, objectName: file, queryParameters: nil).map { data in
+            return try self.client.object.getMedia(bucket: self.bucket, objectName: path, queryParameters: nil).map { data in
                 return File(data: data, filename: name)
             }
         } catch let error {
@@ -97,7 +100,11 @@ public struct GoogleCloudStorage: Storage, ServiceType {
     /// See `Storage.delete(file:)`.
     public func delete(file: String) -> EventLoopFuture<Void> {
         do {
-            return try self.client.object.delete(bucket: self.bucket, objectName: file, queryParameters: nil).transform(to: ())
+            guard let path = file.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) else {
+                throw StorageError(identifier: "pathEncoding", reason: "File percent encoding failed")
+            }
+            
+            return try self.client.object.delete(bucket: self.bucket, objectName: path, queryParameters: nil).transform(to: ())
         } catch let error {
             return self.worker.future(error: error)
         }
