@@ -38,7 +38,7 @@ public struct GoogleCloudStorage: Storage, ServiceType {
     }
     
     /// See `Storage.store(file:at:)`.
-    public func store(file: File, at path: String?) -> EventLoopFuture<String> {
+    public func store(file: File, at path: String? = nil) -> EventLoopFuture<String> {
         do {
             let name = path == nil ? file.filename : path?.last == "/" ? path! + file.filename : path! + "/" + file.filename
             
@@ -78,7 +78,7 @@ public struct GoogleCloudStorage: Storage, ServiceType {
     /// current file and create a new one with the updated data.
     ///
     /// The `options` parameter is ignored.
-    public func write(file: String, with data: Data, options: Data.WritingOptions) -> EventLoopFuture<File> {
+    public func write(file: String, with data: Data, options: Data.WritingOptions = []) -> EventLoopFuture<File> {
         do {
             guard let name = file.split(separator: "/").last.map(String.init) else {
                 throw StorageError(identifier: "fileName", reason: "Unable to extract file name from path `\(file)`")
