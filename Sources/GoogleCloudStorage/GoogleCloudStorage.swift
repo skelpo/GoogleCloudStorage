@@ -7,9 +7,10 @@ public struct GoogleCloudStorage: Storage, ServiceType {
     
     /// See `ServiceType.makeService(for:)`.
     public static func makeService(for worker: Container) throws -> GoogleCloudStorage {
+        let bucket = try worker.make(Bucket.self)
         let client = try worker.make(GoogleCloudStorageClient.self)
         
-        return GoogleCloudStorage(worker: worker, client: client, bucket: "")
+        return GoogleCloudStorage(worker: worker, client: client, bucket: bucket.name)
     }
     
     
