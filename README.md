@@ -21,7 +21,7 @@ Then you can either register a `GoogleCloudStorage` instance or register the `Go
 
 ```swift
 services.register { container in
-	return try GoogleCloudStorage(worker: container, client: container.make(), bucket: "myproject-31415")
+  return try GoogleCloudStorage(worker: container, client: container.make(), bucket: "myproject-31415")
 }
 ```
 
