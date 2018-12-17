@@ -42,8 +42,8 @@
         "repositoryURL": "https://github.com/vapor-community/google-cloud-provider.git",
         "state": {
           "branch": null,
-          "revision": "4031d986373f4b394393d5d3d879e87643d8d3ff",
-          "version": "0.1.0"
+          "revision": "599a135a2ddbc6b0bb5b7378a692a6ff9558bc2e",
+          "version": "0.1.1"
         }
       },
       {
