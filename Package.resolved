@@ -38,12 +38,30 @@
         }
       },
       {
+        "package": "GoogleCloud",
+        "repositoryURL": "https://github.com/vapor-community/google-cloud-provider.git",
+        "state": {
+          "branch": null,
+          "revision": "4031d986373f4b394393d5d3d879e87643d8d3ff",
+          "version": "0.1.0"
+        }
+      },
+      {
         "package": "HTTP",
         "repositoryURL": "https://github.com/vapor/http.git",
         "state": {
           "branch": null,
           "revision": "6973bf50dab8dd00e4daf8cb82ca72b33f5db016",
           "version": "3.1.6"
+        }
+      },
+      {
+        "package": "JWT",
+        "repositoryURL": "https://github.com/vapor/jwt.git",
+        "state": {
+          "branch": null,
+          "revision": "2e225c722bf26407c1c4bd11d341e48759f46095",
+          "version": "3.0.0"
         }
       },
       {
