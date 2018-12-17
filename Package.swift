@@ -7,9 +7,11 @@ let package = Package(
     products: [
         .library(name: "GoogleCloudStorage", targets: ["GoogleCloudStorage"]),
     ],
-    dependencies: [],
+    dependencies: [
+        .package(url: "https://github.com/skelpo/Storage.git", from: "0.1.0")
+    ],
     targets: [
-        .target(name: "GoogleCloudStorage", dependencies: []),
+        .target(name: "GoogleCloudStorage", dependencies: ["Storage"]),
         .testTarget(name: "GoogleCloudStorageTests", dependencies: ["GoogleCloudStorage"]),
     ]
 )
