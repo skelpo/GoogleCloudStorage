@@ -38,4 +38,4 @@ You can find API documentation [here](http://www.skelpo.codes/GoogleCloudStorage
 
 ## License
 
-S3Storage is under the [MIT license agreement](https://github.com/skelpo/GoogleCloudStorage/blob/master/LICENSE).
+GoogleCloudStorage is under the [MIT license agreement](https://github.com/skelpo/GoogleCloudStorage/blob/master/LICENSE).
