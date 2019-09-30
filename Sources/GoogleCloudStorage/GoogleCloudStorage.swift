@@ -58,7 +58,7 @@ public struct GoogleCloudStorage: Storage {
                 return File(data: data.data ?? Data(), filename: name)
             }
         } catch let error {
-            return self.eventLoop.future(error: error)
+            return self.eventLoop.makeFailedFuture(error)
         }
     }
     
@@ -79,9 +79,9 @@ public struct GoogleCloudStorage: Storage {
             
             return self.delete(file: file).flatMap { _ in
                 return self.store(file: new, at: path == "" ? nil : path)
-            }.transform(to: new)
+            }.map { _ in new }
         } catch let error {
-            return self.eventLoop.future(error: error)
+            return self.eventLoop.makeFailedFuture(error)
         }
     }
     
@@ -92,9 +92,9 @@ public struct GoogleCloudStorage: Storage {
                 throw StorageError(identifier: "pathEncoding", reason: "File percent encoding failed")
             }
             
-            return self.client.object.delete(bucket: self.bucket, object: path, queryParameters: nil).transform(to: ())
+            return self.client.object.delete(bucket: self.bucket, object: path, queryParameters: nil).map { _ in () }
         } catch let error {
-            return self.eventLoop.future(error: error)
+            return self.eventLoop.makeFailedFuture(error)
         }
     }
 }
