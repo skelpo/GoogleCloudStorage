@@ -9,7 +9,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/vapor-community/GoogleCloudKit.git", from: "1.0.0-alpha"),
-        .package(url: "https://github.com/skelpo/Storage.git", from: "1.0.0-alpha")
+        .package(url: "https://github.com/skelpo/Storage.git", .branch("develop"))
     ],
     targets: [
         .target(name: "GoogleCloudStorage", dependencies: ["Storage", "GoogleCloudKit"]),
