@@ -1,24 +1,16 @@
-import GoogleCloud
+import GoogleCloudKit
+import Foundation
 import Storage
-import Vapor
+import NIO
 
-/// A `Storage` interface for Google Cloud Storage, backed by the [google-cloud-provider](https://github.com/vapor-community/google-cloud-provider).
-public struct GoogleCloudStorage: Storage, ServiceType {
-    
-    /// See `ServiceType.makeService(for:)`.
-    public static func makeService(for worker: Container) throws -> GoogleCloudStorage {
-        let bucket = try worker.make(Bucket.self)
-        let client = try worker.make(GoogleCloudStorageClient.self)
-        
-        return GoogleCloudStorage(worker: worker, client: client, bucket: bucket.name)
-    }
-    
+/// A `Storage` interface for Google Cloud Storage, backed by the [GoogleCloudKit](https://github.com/vapor-community/GoogleCloudKit).
+public struct GoogleCloudStorage: Storage {
     
     /// The name of the bucket the files will be stored in.
     public let bucket: String
     
-    /// The worker that the service instance lives on.
-    public let worker: Worker
+    /// The event-loop that the service instance lives on.
+    public let eventLoop: EventLoop
     
     
     /// The client instance used for storing, reading, rewriting, and deleting files.
@@ -28,31 +20,27 @@ public struct GoogleCloudStorage: Storage, ServiceType {
     /// Creates a new `GoogleCloudStorage` instance.
     ///
     /// - Parameters:
-    ///   - worker: The worker that the service instance lives on.
+    ///   - eventLoop: The event-loop that the service instance lives on.
     ///   - client: The client used to interact with the Google Cloud API.
     ///   - bucket: The name of the bucket the files will be stored in.
-    public init(worker: Worker, client: GoogleCloudStorageClient, bucket: String) {
-        self.worker = worker
+    public init(eventLoop: EventLoop, client: GoogleCloudStorageClient, bucket: String) {
+        self.eventLoop = eventLoop
         self.client = client
         self.bucket = bucket
     }
     
     /// See `Storage.store(file:at:)`.
     public func store(file: File, at path: String? = nil) -> EventLoopFuture<String> {
-        do {
-            let name = path == nil ? file.filename : path?.last == "/" ? path! + file.filename : path! + "/" + file.filename
-            
-            return try client.object.createSimpleUpload(
-                bucket: self.bucket,
-                data: file.data,
-                name: name,
-                mediaType: file.contentType ?? .plainText,
-                queryParameters: nil
-            ).map { response in
-                return response.name ?? name
-            }
-        } catch let error {
-            return self.worker.future(error: error)
+        let name = path == nil ? file.filename : path?.last == "/" ? path! + file.filename : path! + "/" + file.filename
+
+        return client.object.createSimpleUpload(
+            bucket: self.bucket,
+            data: file.data,
+            name: name,
+            contentType: "text/plain",
+            queryParameters: nil
+        ).map { response in
+            return response.name ?? name
         }
     }
     
@@ -66,11 +54,11 @@ public struct GoogleCloudStorage: Storage, ServiceType {
                 throw StorageError(identifier: "pathEncoding", reason: "File percent encoding failed")
             }
             
-            return try self.client.object.getMedia(bucket: self.bucket, objectName: path, queryParameters: nil).map { data in
-                return File(data: data, filename: name)
+            return self.client.object.getMedia(bucket: self.bucket, object: path, queryParameters: nil).map { data in
+                return File(data: data.data ?? Data(), filename: name)
             }
         } catch let error {
-            return self.worker.future(error: error)
+            return self.eventLoop.future(error: error)
         }
     }
     
@@ -80,7 +68,7 @@ public struct GoogleCloudStorage: Storage, ServiceType {
     /// current file and create a new one with the updated data.
     ///
     /// The `options` parameter is ignored.
-    public func write(file: String, with data: Data, options: Data.WritingOptions = []) -> EventLoopFuture<File> {
+    public func write(file: String, with data: Data) -> EventLoopFuture<File> {
         do {
             guard let name = file.split(separator: "/").last.map(String.init) else {
                 throw StorageError(identifier: "fileName", reason: "Unable to extract file name from path `\(file)`")
@@ -93,7 +81,7 @@ public struct GoogleCloudStorage: Storage, ServiceType {
                 return self.store(file: new, at: path == "" ? nil : path)
             }.transform(to: new)
         } catch let error {
-            return self.worker.future(error: error)
+            return self.eventLoop.future(error: error)
         }
     }
     
@@ -104,9 +92,9 @@ public struct GoogleCloudStorage: Storage, ServiceType {
                 throw StorageError(identifier: "pathEncoding", reason: "File percent encoding failed")
             }
             
-            return try self.client.object.delete(bucket: self.bucket, objectName: path, queryParameters: nil).transform(to: ())
+            return self.client.object.delete(bucket: self.bucket, object: path, queryParameters: nil).transform(to: ())
         } catch let error {
-            return self.worker.future(error: error)
+            return self.eventLoop.future(error: error)
         }
     }
 }
