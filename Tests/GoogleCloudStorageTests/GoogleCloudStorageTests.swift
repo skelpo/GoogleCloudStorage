@@ -1,47 +1,12 @@
-import GoogleCloud
-import Vapor
+import NIO
 import XCTest
+import Storage
+import GoogleCloudKit
 @testable import GoogleCloudStorage
 
-extension GoogleCloudStorage {
-    static func register(to services: inout Services)throws {
-        guard
-            let project = Environment.get("GCS_PROJECT"),
-            let credentials = Environment.get("GCS_CREDS"),
-            let bucket = Environment.get("GCS_BUCKET")
-        else {
-            throw Abort(.internalServerError, reason: "Missing S3 configuration variable(s)")
-        }
-        
-        let config = GoogleCloudProviderConfig(
-            project: project,
-            credentialFile: credentials
-        )
-        let storageConfig = GoogleCloudStorageConfig(
-            scope: [StorageScope.fullControl],
-            serviceAccount: "google-cloud-storage-test",
-            project: project
-        )
-        
-        services.register(config)
-        services.register(storageConfig)
-        try services.register(GoogleCloudProvider())
-        
-        services.register(Bucket(name: bucket))
-        services.register(GoogleCloudStorage.self)
-    }
-}
-
 final class GoogleCloudStorageTests: XCTestCase {
-    let app: Application = {
-        var services = Services.default()
-        try! GoogleCloudStorage.register(to: &services)
-        
-        let config = Config.default()
-        let env = try! Environment.detect()
-        
-        return try! Application(config: config, environment: env, services: services)
-    }()
+    var eventLoopGroup: EventLoopGroup! = nil
+    var storage: Storage! = nil
     
     let data = """
     # Storage
@@ -63,37 +28,70 @@ final class GoogleCloudStorageTests: XCTestCase {
 
     # Final
     """.data(using: .utf8)!
-    
+
+
+    override func setUp() {
+        super.setUp()
+
+        guard
+            let project = ProcessInfo.processInfo.environment["GCS_PROJECT"],
+            let credentials = ProcessInfo.processInfo.environment["GCS_CREDS"],
+            let bucket = ProcessInfo.processInfo.environment["GCS_BUCKET"]
+        else {
+            fatalError("Missing Google Cloud configuration variable(s)")
+        }
+
+        self.eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+        let eventLoop = eventLoopGroup.next()
+
+        do {
+            let config = GoogleCloudCredentialsConfiguration(projectId: project, credentialsFile: credentials)
+            let storageConfig = GoogleCloudStorageConfiguration(scope: [.fullControl], serviceAccount: "google-cloud-storage-test", project: project)
+            let client = try GoogleCloudStorageClient(configuration: config, storageConfig: storageConfig, eventLoop: eventLoop)
+            self.storage = GoogleCloudStorage(eventLoop: eventLoop, client: client, bucket: bucket)
+        } catch let error {
+            fatalError("GCS CLIENT INIT FAILED: \(error.localizedDescription)")
+        }
+    }
+
+    override func tearDown() {
+        do {
+            try self.eventLoopGroup.syncShutdownGracefully()
+        } catch let error {
+            print("ELG SHUTDOWN FAILED:", error)
+        }
+
+        self.storage = nil
+        self.eventLoopGroup = nil
+
+        super.tearDown()
+    }
+
+
     func testStore()throws {
-        let storage = try self.app.make(GoogleCloudStorage.self)
-        let file = Vapor.File(data: self.data, filename: "test.md")
-        
-        let path = try storage.store(file: file, at: "markdown").wait()
-        
+        let file = File(data: self.data, filename: "test.md")
+
+        let path = try self.storage.store(file: file, at: "markdown").wait()
+
         XCTAssertEqual(path, "markdown/test.md")
     }
     
     func testFetch()throws {
-        let storage = try self.app.make(GoogleCloudStorage.self)
-        
-        let file = try storage.fetch(file: "markdown/test.md").wait()
+        let file = try self.storage.fetch(file: "markdown/test.md").wait()
         
         XCTAssertEqual(file.filename, "test.md")
         XCTAssertEqual(file.data, self.data)
     }
     
     func testWrite()throws {
-        let storage = try self.app.make(GoogleCloudStorage.self)
-        
-        let updated = try storage.write(file: "markdown/test.md", with: "All new updated data!".data(using: .utf8)!).wait()
+        let updated = try self.storage.write(file: "markdown/test.md", with: "All new updated data!".data(using: .utf8)!).wait()
         
         XCTAssertEqual(updated.data, "All new updated data!".data(using: .utf8))
         XCTAssertEqual(updated.filename, "test.md")
     }
     
     func testDelete()throws {
-        let storage = try self.app.make(GoogleCloudStorage.self)
-        try XCTAssertNoThrow(storage.delete(file: "markdown/test.md").wait())
+        try XCTAssertNoThrow(self.storage.delete(file: "markdown/test.md").wait())
     }
     
     static var allTests: [(String, (GoogleCloudStorageTests) -> ()throws -> ())] = []

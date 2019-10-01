@@ -8,11 +8,11 @@ let package = Package(
         .library(name: "GoogleCloudStorage", targets: ["GoogleCloudStorage"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor-community/google-cloud-provider.git", from: "0.1.0"),
-        .package(url: "https://github.com/skelpo/Storage.git", from: "0.1.0")
+        .package(url: "https://github.com/vapor-community/GoogleCloudKit.git", from: "1.0.0-alpha"),
+        .package(url: "https://github.com/skelpo/Storage.git", from: "1.0.0")
     ],
     targets: [
-        .target(name: "GoogleCloudStorage", dependencies: ["Storage", "GoogleCloud"]),
+        .target(name: "GoogleCloudStorage", dependencies: ["Storage", "GoogleCloudKit"]),
         .testTarget(name: "GoogleCloudStorageTests", dependencies: ["GoogleCloudStorage"]),
     ]
 )
