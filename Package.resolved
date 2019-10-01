@@ -32,9 +32,9 @@
         "package": "Storage",
         "repositoryURL": "https://github.com/skelpo/Storage.git",
         "state": {
-          "branch": "develop",
-          "revision": "b4a1918a536228fcd893df1c3c73ec3c42c6bc91",
-          "version": null
+          "branch": null,
+          "revision": "15877d3ee56daae7fae9c5f97056292a396ff1e7",
+          "version": "1.0.0"
         }
       },
       {
